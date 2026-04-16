@@ -1,0 +1,16 @@
+.env
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+*.egg-info/
+dist/
+build/
+outputs/*
+!outputs/.gitkeep
+data/cache/*.parquet
+data/cache/*.csv
+.ipynb_checkpoints/
