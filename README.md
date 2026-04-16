@@ -61,3 +61,37 @@ Se o seu schema usar outro nome de tabela, view ou coluna de tempo, altere apena
 - Documente a escolha da **ordem ARIMA** (ou experimente grades simples e compare AIC / MAE).
 - Comente limitações: sazonalidade semanal forte pode exigir **SARIMA** ou modelos com regressores.
 - Não versione o arquivo `.env` (já está no `.gitignore`).
+
+## Publicar no GitHub
+
+O repositório Git local já está inicializado na pasta do projeto (branch `main`, commit inicial).
+
+### Opção A — GitHub CLI (`gh`, recomendado)
+
+1. Faça login (abre o navegador ou pede token):
+
+```text
+gh auth login
+```
+
+2. Crie o repositório remoto e envie o código:
+
+```text
+cd glpi_clickhouse_forecast
+gh repo create glpi_clickhouse_forecast --public --source=. --remote=origin --push
+```
+
+Se o nome `glpi_clickhouse_forecast` já existir na sua conta, use outro nome no comando.
+
+### Opção B — site do GitHub + `git push`
+
+1. Em [github.com/new](https://github.com/new), crie um repositório **vazio** (sem README).
+2. Na pasta do projeto:
+
+```text
+cd glpi_clickhouse_forecast
+git remote add origin https://github.com/SEU_USUARIO/NOME_DO_REPO.git
+git push -u origin main
+```
+
+Substitua `SEU_USUARIO` e `NOME_DO_REPO` pelos valores reais. Use autenticação por **Personal Access Token** (HTTPS) ou SSH, conforme sua configuração.
