@@ -68,6 +68,18 @@ O repositório Git local já está inicializado na pasta do projeto (branch `mai
 
 ### Opção A — GitHub CLI (`gh`, recomendado)
 
+Se o PowerShell disser que `gh` não é reconhecido, o PATH ainda não foi atualizado nessa janela. **Feche e abra o terminal de novo**, ou execute:
+
+```text
+$env:Path = [System.Environment]::GetEnvironmentVariable("Path","Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path","User")
+```
+
+Alternativa: use o caminho completo do executável:
+
+```text
+& "C:\Program Files\GitHub CLI\gh.exe" auth login
+```
+
 1. Faça login (abre o navegador ou pede token):
 
 ```text
