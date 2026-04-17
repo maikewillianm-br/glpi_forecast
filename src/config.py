@@ -6,8 +6,6 @@ from dataclasses import dataclass
 
 from dotenv import load_dotenv
 
-_ID = re.compile(r"^[\w]+$")
-_QUAL = re.compile(r"^[\w]+\.[\w]+$")
 _ISO_DATE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
 
 
@@ -22,14 +20,6 @@ def _optional_iso_date(label: str, value: str | None) -> str | None:
     return v
 
 
-def _require_ident(name: str, value: str) -> str:
-    if not value or not (_ID.match(value) or _QUAL.match(value)):
-        raise ValueError(
-            f"{name} inválido para SQL: use apenas letras, números, _ e opcionalmente db.tabela"
-        )
-    return value
-
-
 @dataclass(frozen=True)
 class Settings:
     clickhouse_host: str
@@ -37,8 +27,6 @@ class Settings:
     clickhouse_user: str
     clickhouse_password: str
     clickhouse_database: str
-    glpi_events_table: str
-    glpi_date_column: str
     glpi_date_from: str | None
     glpi_date_to: str | None
     train_ratio: float
@@ -57,15 +45,6 @@ def load_settings() -> Settings:
     user = os.getenv("CLICKHOUSE_USER", "").strip()
     password = os.getenv("CLICKHOUSE_PASSWORD", "")
     database = os.getenv("CLICKHOUSE_DATABASE", "_master").strip()
-
-    table = _require_ident(
-        "GLPI_EVENTS_TABLE",
-        os.getenv("GLPI_EVENTS_TABLE", "glpi_tickets").strip(),
-    )
-    date_col = _require_ident(
-        "GLPI_DATE_COLUMN",
-        os.getenv("GLPI_DATE_COLUMN", "date").strip(),
-    )
 
     df_raw = _optional_iso_date("GLPI_DATE_FROM", os.getenv("GLPI_DATE_FROM"))
     dt_raw = _optional_iso_date("GLPI_DATE_TO", os.getenv("GLPI_DATE_TO"))
@@ -89,8 +68,6 @@ def load_settings() -> Settings:
         clickhouse_user=user,
         clickhouse_password=password,
         clickhouse_database=database,
-        glpi_events_table=table,
-        glpi_date_column=date_col,
         glpi_date_from=df_raw,
         glpi_date_to=dt_raw,
         train_ratio=train_ratio,

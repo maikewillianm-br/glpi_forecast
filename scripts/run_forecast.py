@@ -31,7 +31,7 @@ def main() -> None:
     raw = fetch_daily_counts(settings)
     if raw.empty:
         raise SystemExit(
-            "Nenhuma linha retornada do ClickHouse. Verifique tabela, coluna de data e filtros."
+            "Nenhuma linha retornada do ClickHouse. Verifique dw.glpi_tickets / vw_glpi_tickets e filtros de data."
         )
 
     daily = complete_daily_calendar(raw)

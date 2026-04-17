@@ -6,7 +6,7 @@ Projeto acadêmico: extrair uma série diária (ex.: chamados/dia) de tabelas es
 
 - Python 3.10+
 - Acesso HTTP ao ClickHouse (porta padrão **8123**)
-- Tabela com coluna de data compatível com `toDate()` no ClickHouse
+- Tabelas `dw.glpi_tickets` e `dw.vw_glpi_tickets` acessíveis com a query padrão do projeto
 
 ## Configuração
 
@@ -19,13 +19,11 @@ python -m venv .venv
 pip install -r requirements.txt
 ```
 
-2. Copie `.env.example` para `.env` e preencha com suas credenciais e nomes de tabela/coluna reais no ClickHouse.
+2. Copie `.env.example` para `.env` e preencha com suas credenciais do ClickHouse.
 
 3. Ajuste no `.env`, se necessário:
 
-- `GLPI_EVENTS_TABLE` — tabela de eventos (ex.: `glpi_tickets` ou `meu_db.glpi_tickets`)
-- `GLPI_DATE_COLUMN` — coluna da data de abertura ou ocorrência (ex.: `date`)
-- `GLPI_DATE_FROM` / `GLPI_DATE_TO` — opcional, formato `YYYY-MM-DD`
+- `GLPI_DATE_FROM` / `GLPI_DATE_TO` — opcional, formato `YYYY-MM-DD` (filtro em `dt_created`; se `GLPI_DATE_FROM` estiver vazio, usa `2023-01-01`)
 - `ARIMA_ORDER` — ordem `p,d,q` (ex.: `1,1,1`)
 - `TRAIN_RATIO` — proporção para treino na métrica de teste
 - `FORECAST_HORIZON` — dias à frente na figura final
@@ -38,6 +36,18 @@ Na pasta do projeto (com `.venv` ativado):
 python scripts/run_forecast.py
 ```
 
+### Shiny (filtros + modelos)
+
+Interface web ([Shiny for Python](https://shiny.posit.co/py/)) para escolher **categoria**, **tipo** (`Incidente` / `Requisição`, etc.) e **equipa**, ajustar o tamanho da janela de teste e ver **MAE/RMSE** e gráficos para o modelo selecionado (ou comparar todos).
+
+```text
+pip install shiny
+cd glpi_clickhouse_forecast
+shiny run shiny_app/app.py --reload
+```
+
+Abre o URL indicado no terminal (por defeito `http://127.0.0.1:8000`). Com filtros ativos é necessário **ClickHouse**; sem filtros, se a ligação falhar, usa-se `data/cache/series_daily.csv` como no notebook.
+
 Saídas:
 
 - `outputs/forecast_arima.png` — histórico, ajuste e previsão com intervalo de confiança aproximado
@@ -45,16 +55,25 @@ Saídas:
 
 ## Consulta SQL usada
 
-A agregação é equivalente a:
+A série diária é `count()` por `toDate(dt_created)` sobre o conjunto filtrado abaixo (equivalente à query analítica em `dw`):
 
 ```sql
-SELECT toDate(`<GLPI_DATE_COLUMN>`) AS day, count() AS y
-FROM <GLPI_EVENTS_TABLE>
-WHERE ... filtros de data opcionais ...
-GROUP BY day ORDER BY day
+SELECT
+    toDate(dt_created) AS day,
+    count() AS y
+FROM (
+    SELECT id_key, title, dt_created, /* ... demais colunas ... */
+    FROM dw.glpi_tickets AS t
+    WHERE t._process_date_brt = (SELECT max(_process_date_brt) FROM dw.vw_glpi_tickets)
+      AND toDate(t.dt_created) >= toDate('<GLPI_DATE_FROM ou 2023-01-01>')
+      /* opcional: AND toDate(t.dt_created) <= toDate('<GLPI_DATE_TO>') */
+      AND upperUTF8(t.title) NOT LIKE '%TESTE%'
+) AS tickets
+GROUP BY day
+ORDER BY day
 ```
 
-Se o seu schema usar outro nome de tabela, view ou coluna de tempo, altere apenas o `.env`.
+Detalhe da subconsulta: `src/clickhouse_io.py` (`_sql_fetch_tickets_base`).
 
 ## Notas para o trabalho
 
